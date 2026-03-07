@@ -1,0 +1,54 @@
+{
+  "name": "agentic-task-enforcer-mcp",
+  "displayName": "Agentic Task Enforcer (MCP)",
+  "description": "Strict agentic task management that replaces VS Code's TODO list. Enforces planning, review, sanity checks, and one-task-at-a-time execution with mandatory next_task calls.",
+  "version": "1.0.1",
+  "type": "module",
+  "publisher": "graydini",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/graydini/agentic-task-enforcer-mcp.git"
+  },
+  "author": "Graydini",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/graydini/agentic-task-enforcer-mcp/issues"
+  },
+  "homepage": "https://github.com/graydini/agentic-task-enforcer-mcp#readme",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": ["AI", "Programming Languages"],
+  "activationEvents": ["onStartupFinished","onCommand:agenticTaskEnforcer.activate"],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "agenticTaskEnforcer.activate",
+        "title": "Activate Agentic Task Enforcer"
+      }
+    ],
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "agenticTaskEnforcer",
+        "label": "Agentic Task Enforcer"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package",
+    "prepublish": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.95.0",
+    "@types/node": "20.x",
+    "typescript": "^5.5.4",
+    "vsce": "^2.3.0"
+  }
+}
