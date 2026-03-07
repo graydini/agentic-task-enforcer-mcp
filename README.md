@@ -11,20 +11,22 @@ Strict agentic task management that replaces VS Code's TODO list. Enforces plann
 
 ## Installation
 
-1. Clone the repository:
+1. Clone the repository (create a local folder matching the repo name):
    ```bash
-   git clone https://github.com/graydenfisher/agentic-task-enforcer-mcp.git
-   cd agentic-task-enforcer-mcp
+   git clone https://github.com/graydini/agentic-task-enforcer-mcp.git
+   cd agentic-task-enforcer-mcp        # change into the project root
    ```
-2. Install dependencies and build:
+2. Install dependencies and compile the TypeScript sources:
    ```bash
    npm install
-   npm run build
+   npm run build                        # outputs to ./dist
    ```
-3. Package the extension and install the `.vsix` file:
+3. Package the VS Code extension and install it locally. The generated
+   filename includes the current version, so you can use a wildcard to
+   avoid hard‑coding:
    ```bash
-   npm run package
-   code --install-extension agentic-task-enforcer-mcp-1.0.1.vsix
+   npm run package                      # creates agentic-task-enforcer-mcp-<ver>.vsix
+   code --install-extension *.vsix      # or specify the exact name
    ```
 
 ## Usage
@@ -34,7 +36,7 @@ Strict agentic task management that replaces VS Code's TODO list. Enforces plann
 
 ## Contributing
 
-Contributions are welcome! Feel free to open issues or pull requests on [GitHub](https://github.com/graydenfisher/agentic-task-enforcer-mcp).
+Contributions are welcome! Feel free to open issues or pull requests on [GitHub](https://github.com/graydini/agentic-task-enforcer-mcp).
 
 ## License
 

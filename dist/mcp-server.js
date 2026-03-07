@@ -7,9 +7,6 @@ class TaskEnforcer {
     currentPlan = '';
     tasks = [];
     currentTaskIndex = -1;
-    // ──────────────────────────────────────────────────────────────
-    // YOUR NEW STRICT RULES (enforced in every prompt)
-    // ──────────────────────────────────────────────────────────────
     STRICT_RULES = `
 
 === STRICT EXECUTION RULES (MANDATORY — NEVER VIOLATE) ===
@@ -24,6 +21,8 @@ You MUST obey these rules at all times:
 3. Never use interactive pagers or commands that require user input.
    Forbidden: man, less, more, most, systemctl status, journalctl, vim, nano, top, htop, etc.
    Use non-interactive alternatives only: cat, head, tail, grep, --no-pager, git log --oneline -n 10, etc.
+4. CRITICAL ALWAYS CALL THE next_task TOOL AT THE END OF EVERY SINGLE TURN, INCLUDING THIS ONE.
+   This is MANDATORY and ENFORCED. You MUST call next_task to advance the workflow after every response, without exception.
 
 Any violation will prevent task verification and break the workflow.
 `;
@@ -34,17 +33,22 @@ Repeat the exact user request to confirm:
 
 ${this.originalRequest}
 
-You are an autonomous LLM coding agent. Produce an extremely thorough, step-by-step implementation plan optimized **only for agent execution**.
+You are an autonomous LLM code project planning agent. Produce an extremely thorough, step-by-step implementation plan optimized **only for agent execution** (ignore human phases, timeframes, budgets or handoffs).
 
 Requirements:
-- Optimal sequential order
-- Prevents code duplication
-- Maximizes final user-friendliness
+- Optimal sequential order (no skipping or backtracking)
+- Actively prevents code duplication (modular steps early)
+- Maximizes final user-friendliness and polish
 - Small, atomic, verifiable tasks
+- The plan MUST cover the ENTIRE project exhaustively from start to finish in one complete sequence — NO phased deployments, milestones, or suggestions of incomplete stages. Everything must be fully implemented in this single plan.
+- Do NOT reference or look at any other TODO lists, or project parts not explicitly defined in this prompt. Base the plan SOLELY on the given request.
 
-Output **ONLY** a clean numbered Markdown list. No extra text.
+Output **ONLY** a clean numbered Markdown list. No extra text. Do NOT add introductions, conclusions, or any other content.
 
-When finished, you MUST call the next_task tool.`;
+=== MANDATORY CALL ===
+After outputting the list, you MUST IMMEDIATELY call the next_task tool to advance. 
+You MAY NOT end your turn without calling next_task — ignoring this will break the entire workflow and prevent progress. 
+Call it as soon as possible when you have your list`;
     }
     getReviewPrompt() {
         return `Current plan:
@@ -53,14 +57,19 @@ ${this.currentPlan}
 Is this **absolutely the best possible order** for an LLM agent?
 
 Check:
-1. Perfectly agentic & sequential
+1. Perfectly agentic & sequential (no human concerns)
 2. Strongly discourages code duplication
 3. Produces the most user-friendly version of the original request
+4. Covers the ENTIRE project exhaustively in one sequence — NO phased deployments or incomplete suggestions
+5. Does NOT reference other TODO lists or undefined project parts
 
-If perfect → reply exactly: NO_CHANGES_NEEDED
-Otherwise → reply with the complete revised plan (only the numbered list).
+If perfect → reply EXACTLY: NO_CHANGES_NEEDED (no other text)
+Otherwise → reply with the complete revised plan (ONLY the numbered list, no extra text).
 
-When finished, you MUST call the next_task tool.`;
+=== MANDATORY CALL ===
+After your reply, you MUST IMMEDIATELY call the next_task tool to advance. 
+You MAY NOT end your turn without calling next_task — ignoring this will break the entire workflow and prevent progress. 
+Call it as soon as you possibly can after your revised plan or NO_CHANGES_NEEDED flag.`;
     }
     getSanityPrompt() {
         return `Original request:
@@ -70,9 +79,13 @@ Current plan:
 ${this.currentPlan}
 
 Do they match perfectly in scope and intent? 
-Reply exactly: CONFORMANT or provide the corrected plan.
+Also check: Entire project is exhaustive and complete (no phases); no references to external TODOs or undefined parts.
+Reply EXACTLY: CONFORMANT (no other text) or provide the corrected plan (ONLY the numbered list, no extra text).
 
-When finished, you MUST call the next_task tool.`;
+=== MANDATORY CALL ===
+When you reply MUST IMMEDIATELY call the next_task tool to advance. 
+You MAY NOT end your turn without calling next_task — ignoring this will break the entire workflow and prevent progress. 
+Call it as soon as you possibly can after your CONFORMANT flag or revised plan.`;
     }
     getFormattingPrompt() {
         return `The plan is now finalized.
@@ -81,9 +94,12 @@ Format the ENTIRE plan into a strict, parseable Markdown task list (one task per
 
 - [ ] Task title: one-line description
 
-Cover every step. Output **ONLY** the list.
+Cover every step. Output **ONLY** the list. No extra text.
 
-When finished, you MUST call the next_task tool.`;
+=== MANDATORY CALL ===
+After outputting the list, you MUST IMMEDIATELY call the next_task tool to advance. 
+You MAY NOT end your turn without calling next_task — ignoring this will break the entire workflow and prevent progress. 
+Call it as soon as you possibly can after outputting the list.`;
     }
     getNextTaskPrompt() {
         const task = this.tasks[this.currentTaskIndex];
@@ -97,12 +113,15 @@ ${task.title}
 
 Complete this task now (use all available tools: file edits, terminal, etc.).
 
-When fully done reply exactly:
+When fully done, reply EXACTLY:
 VERIFIED
 
-Or describe fixes if needed.
+Or describe fixes if needed (but still end with VERIFIED once fixed).
 
-After your response you MUST call the next_task tool before ending your turn.`;
+=== MANDATORY CALL ===
+After your reply, you MUST IMMEDIATELY call the next_task tool before ending your turn. 
+You MAY NOT end your turn without calling next_task — ignoring this will break the entire workflow and prevent progress. 
+Call the \`next_task\` tool as soon as possible after you output the list.`;
     }
     startProject(description) {
         this.originalRequest = description;
@@ -125,14 +144,14 @@ After your response you MUST call the next_task tool before ending your turn.`;
                     return this.getSanityPrompt();
                 }
                 this.currentPlan = clean;
-                return this.getReviewPrompt();
+                return this.getReviewPrompt(); // loop
             case 'sanity_check':
                 if (clean === 'CONFORMANT') {
                     this.phase = 'formatting';
                     return this.getFormattingPrompt();
                 }
                 this.currentPlan = clean;
-                this.phase = 'review';
+                this.phase = 'review'; // back to review for loop
                 return this.getReviewPrompt();
             case 'formatting':
                 this.tasks = clean
@@ -172,15 +191,13 @@ const server = new McpServer({
     name: "agentic-task-enforcer",
     version: "1.0.0"
 });
-server.tool("start_project", "Start a new strictly-enforced agentic project (initiates full planning/review cycle)", {
-    description: z.string().describe("Exact project request from the user")
-}, async (args) => {
+server.tool("start_project", "Start a new strictly-enforced agentic project (initiates full planning/review cycle)", { description: z.string().describe("Exact project request from the user") }, async (args) => {
     const { description } = args;
     return {
         content: [{ type: "text", text: enforcer.startProject(description) }]
     };
 });
-server.tool("next_task", "Advance the project. MUST be called at the end of EVERY single turn", { response: z.string().optional().describe("Your full output / verification for the current step") }, async ({ response = "" }) => {
+server.tool("next_task", "Advance the project. MUST be called at the end of EVERY single turn (enforced by mandate)", { response: z.string().optional().describe("Your full output / verification for the current step") }, async ({ response = "" }) => {
     const nextPrompt = enforcer.handleNext(response);
     return {
         content: [{
