@@ -111,6 +111,15 @@ Call it as soon as you possibly can after outputting the list.`;
   }
 
   private getNextTaskPrompt(): string {
+    // guard against invalid or missing task index
+    if (this.currentTaskIndex < 0 || this.currentTaskIndex >= this.tasks.length) {
+      // this can happen if the project hasn't been initialized or the plan produced no tasks
+      return `${this.STRICT_RULES}
+
+NO CURRENT TASK:
+There is no task available at index ${this.currentTaskIndex}. ` +
+        `Please ensure a project has been started and the plan generated a non-empty task list.`;
+    }
     const task = this.tasks[this.currentTaskIndex];
     return `${this.STRICT_RULES}
 
@@ -178,6 +187,11 @@ Call the \`next_task\` tool as soon as possible after you output the list.`;
             title: line.replace(/^- \[ \]\s*/, '').trim(),
             verified: false
           }));
+        if (this.tasks.length === 0) {
+          // no tasks generated; move to done and inform caller
+          this.phase = 'done';
+          return "⚠️ No tasks were parsed from the plan. Please ensure the plan output a Markdown task list.";
+        }
         this.currentTaskIndex = 0;
         this.phase = 'executing';
         return this.getNextTaskPrompt();
