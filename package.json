@@ -2,7 +2,7 @@
   "name": "agentic-task-enforcer-mcp",
   "displayName": "Agentic Task Enforcer (MCP)",
   "description": "Strict agentic task management that replaces VS Code's TODO list. Enforces planning, review, sanity checks, and one-task-at-a-time execution with mandatory next_task calls.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "publisher": "graydini",
   "repository": {
@@ -18,8 +18,14 @@
   "engines": {
     "vscode": "^1.95.0"
   },
-  "categories": ["AI", "Programming Languages"],
-  "activationEvents": ["onStartupFinished","onCommand:agenticTaskEnforcer.activate"],
+  "categories": [
+    "AI",
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:agenticTaskEnforcer.activate"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
